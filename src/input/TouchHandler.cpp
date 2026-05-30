@@ -13,6 +13,7 @@ constexpr uint8_t kReadTouchCommand[] = {
 constexpr uint32_t kPollIntervalMs = 20;
 constexpr uint32_t kFailureBackoffMs = 250;
 constexpr uint8_t kReleaseConfirmSamples = 2;
+constexpr uint16_t kIgnoredTouchCoord = 0;
 
 uint16_t clampDisplayX(uint16_t x) {
   return std::min<uint16_t>(x, static_cast<uint16_t>(BoardConfig::DISPLAY_WIDTH - 1));
@@ -185,6 +186,12 @@ bool TouchHandler::poll(TouchEvent &event) {
           static_cast<uint16_t>(BoardConfig::PANEL_NATIVE_WIDTH - 1 - physicalX));
       break;
   }
+
+  // Some panels emit a bogus (0,0) contact when the grounding is unstable.
+  if (event.x == kIgnoredTouchCoord && event.y == kIgnoredTouchCoord) {
+    return false;
+  }
+
   touchActive_ = true;
   lastX_ = event.x;
   lastY_ = event.y;
